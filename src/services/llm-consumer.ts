@@ -26,7 +26,7 @@ export class LlmConsumer {
     if (!this.servicePromise) {
       this.servicePromise = getService('sbe-llm').catch((e: unknown) => {
         this.servicePromise = null;
-        new Notice(`Презентации: ${errorMessage(e)}`);
+        new Notice(`Презентации: включите плагин sbe-llm и настройте API-ключ (${errorMessage(e)})`);
         throw e;
       });
     }

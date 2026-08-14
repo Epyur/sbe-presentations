@@ -6,7 +6,7 @@ import { QuestionnaireModal, BrainstormModal, PresentationPreviewModal, NewTempl
 import { PresentationEditorModal } from './presentation-editor';
 import { errorMessage } from '../../../sbe-core/src/utils/errors';
 
-export const PRESENTATIONS_VIEW_TYPE = 'sbe-presentations';
+export const PRESENTATIONS_VIEW_TYPE = 'sbe-presentations-view';
 
 const EXPORT_DIR = 'Экспорт/Презентации';
 

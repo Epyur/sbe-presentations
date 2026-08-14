@@ -121,7 +121,7 @@ export class PresentationEditorModal extends Modal {
   }
 
   onClose(): void {
-    if (this.previewTimer !== null) clearTimeout(this.previewTimer);
+    if (this.previewTimer !== null) window.clearTimeout(this.previewTimer);
     this.contentEl.empty();
   }
 
@@ -416,7 +416,7 @@ export class PresentationEditorModal extends Modal {
   // ---------- Превью и сохранение ----------
 
   private schedulePreview(): void {
-    if (this.previewTimer !== null) clearTimeout(this.previewTimer);
+    if (this.previewTimer !== null) window.clearTimeout(this.previewTimer);
     this.previewTimer = window.setTimeout(() => {
       this.previewTimer = null;
       void this.rebuildPreview();

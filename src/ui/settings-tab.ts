@@ -1,4 +1,4 @@
-import { App, Notice, PluginSettingTab, Setting } from 'obsidian';
+import { App, Notice, PluginSettingTab, Setting, TFile } from 'obsidian';
 import type SbePresentationsPlugin from '../main';
 
 export class PresentationSettingsTab extends PluginSettingTab {
@@ -64,7 +64,7 @@ export class PresentationSettingsTab extends PluginSettingTab {
       .addButton(b => b.setButtonText('Открыть')
         .onClick(() => {
           const file = this.app.vault.getAbstractFileByPath('yourbase/sbe_presentations');
-          if (file) void this.app.workspace.getLeaf(false).openFile(file as never);
+          if (file instanceof TFile) void this.app.workspace.getLeaf(false).openFile(file);
           else new Notice('Папка появится после первой генерации');
         }));
   }
