@@ -1,0 +1,58 @@
+/* Мастер презентаций — специфичные стили поверх дизайн-системы sbe-core.
+ * Классы tn-pres-* — собственные; модалки и вьюха используют их + инлайн-стили. */
+
+.tn-pres-container {
+  padding: 12px;
+}
+
+.tn-pres-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.tn-pres-btn {
+  cursor: pointer;
+}
+
+.tn-mt-8 {
+  margin-top: 8px;
+}
+
+.tn-pres-container select.dropdown {
+  max-width: 240px;
+  font-size: var(--font-smaller);
+}
+
+.tn-pres-container input,
+.tn-pres-container textarea,
+.tn-pres-container select {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.tn-pres-container label {
+  display: block;
+  margin-top: 8px;
+  margin-bottom: 4px;
+  font-weight: 600;
+  font-size: var(--font-ui-small);
+}
+
+.tn-blink {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  margin-right: 6px;
+  vertical-align: middle;
+  background: var(--interactive-accent);
+  animation: tn-blink 1.2s steps(2, start) infinite;
+}
+
+@keyframes tn-blink {
+  to {
+    visibility: hidden;
+  }
+}
