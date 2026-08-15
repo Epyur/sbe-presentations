@@ -75,15 +75,13 @@ export default class SbePresentationsPlugin extends Plugin {
 
   async activateView(): Promise<void> {
     const { workspace } = this.app;
-    let leaf = workspace.getLeavesOfType(PRESENTATIONS_VIEW_TYPE)[0];
-    if (!leaf) {
-      leaf = workspace.getLeaf(false);
-      await leaf.setViewState({ type: PRESENTATIONS_VIEW_TYPE, active: true });
+    const existing = workspace.getLeavesOfType(PRESENTATIONS_VIEW_TYPE)[0];
+    if (existing) {
+      workspace.revealLeaf(existing);
+      return;
     }
+    const leaf = workspace.getLeaf(false);
+    await leaf.setViewState({ type: PRESENTATIONS_VIEW_TYPE, active: true });
     workspace.revealLeaf(leaf);
-    const view = leaf.view;
-    if (view instanceof PresentationsView) {
-      view.onOpen();
-    }
   }
 }
