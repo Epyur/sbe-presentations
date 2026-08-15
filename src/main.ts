@@ -1,10 +1,11 @@
-import { ItemView, Notice, Plugin, TAbstractFile, WorkspaceLeaf } from 'obsidian';
+import { Plugin, TAbstractFile, WorkspaceLeaf } from 'obsidian';
 import { PresentationsDatabase } from './database/presentations-db';
 import { PresentationTemplatesService } from './services/presentation-templates';
 import { LlmConsumer } from './services/llm-consumer';
 import { PresentationsView, PRESENTATIONS_VIEW_TYPE } from './ui/presentations-view';
 import { PresentationSettingsTab } from './ui/settings-tab';
-import { errorMessage } from '../../sbe-core/src/utils/errors';
+import { publishService, unpublishService } from '../../sbe-core/src/bridge';
+import type { SbePresentationsApi } from '../../sbe-core/src/types';
 
 export interface PresentationSettings {
   llmModels: string[];
@@ -37,18 +38,6 @@ export default class SbePresentationsPlugin extends Plugin {
       (leaf: WorkspaceLeaf) => new PresentationsView(leaf, this),
     );
 
-    this.addRibbonIcon('presentation', 'Открыть презентации', () => {
-      void this.activateView();
-    });
-
-    this.addCommand({
-      id: 'open-presentations',
-      name: 'Открыть презентации',
-      callback: () => {
-        void this.activateView();
-      },
-    });
-
     this.addSettingTab(new PresentationSettingsTab(this.app, this));
 
     // Свежие шаблоны (правки JSON) учитываются при каждом переключении на вьюху.
@@ -59,9 +48,21 @@ export default class SbePresentationsPlugin extends Plugin {
         }
       }),
     );
+
+    // Точка входа — магазин: «Установленные → Открыть». Собственных риббона/команды нет.
+    publishService<SbePresentationsApi>('sbe-presentations', {
+      open: async () => {
+        await this.activateView();
+      },
+    }, {
+      version: this.manifest.version,
+      name: this.manifest.name,
+    });
   }
 
-  onunload(): void {}
+  onunload(): void {
+    unpublishService('sbe-presentations');
+  }
 
   async loadSettings(): Promise<void> {
     const data = (await this.loadData() as Partial<PresentationSettings>) || {};
