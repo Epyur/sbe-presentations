@@ -1,6 +1,6 @@
 {
   "name": "sbe-presentations",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Мастер презентаций — генерация HTML-презентаций через SBE LLM Center",
   "main": "main.js",
   "scripts": {
