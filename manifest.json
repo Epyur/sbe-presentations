@@ -1,7 +1,7 @@
 {
   "id": "sbe-presentations",
   "name": "Мастер презентаций",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "minAppVersion": "1.11.4",
   "description": "Генерация HTML-презентаций из анкеты через LLM (сервис SBE LLM Center): анкета, мозговой штурм, шаблоны TemplateSpec, WYSIWYG-редактор, показ и PDF.",
   "author": "Полищук Евгений (polishchuk@tn.ru)",

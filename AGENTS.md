@@ -44,6 +44,12 @@
 
 ## История работ
 
+### 2026-08-17 — v0.3.2 (источник реестра)
+- `sbe-core`: `DEFAULT_REGISTRY_URL` → `https://epyur.fvds.ru/registry.json`
+  (raw.githubusercontent.com отдавал 429). Пересборка `main.js`, исходники не менялись.
+- Версия 0.3.1 → **0.3.2** (manifest + package.json).
+- `npx tsc --noEmit` EXIT=0; `npm run build` OK.
+
 ### 2026-08-15 — v0.3.1 (подтверждение брифа в мозговом штурме)
 - Системный промт `brainstormNext` в `src/services/llm-consumer.ts` переработан:
   после сбора информации агент **не завершает штурм сразу**, а представляет
