@@ -1,4 +1,4 @@
-import { ItemView, Notice, Setting, WorkspaceLeaf } from 'obsidian';
+import { DropdownComponent, ItemView, Notice, Setting, TextComponent, WorkspaceLeaf } from 'obsidian';
 import type SbePresentationsPlugin from '../main';
 import type { PresentationDraft, PresentationItem, PresentationQuestionaire } from '../types/presentations';
 import { buildPresentationHtml, PRESENTATION_RENDER_VERSION, getVaultResourceUrl } from '../services/presentation-generator';
@@ -40,6 +40,12 @@ function sanitize(name: string): string {
 
 export class PresentationsView extends ItemView {
   plugin: SbePresentationsPlugin;
+  private rootEl!: HTMLElement;
+  private navEl!: HTMLElement;
+  private crumbEl!: HTMLElement;
+  private collapseLabel!: HTMLElement;
+  private bodyEl!: HTMLElement;
+  private collapsed = false;
   private currentTab: Tab = 'master';
   private selectedModel = '';
   private questionaire!: PresentationQuestionaire;
@@ -66,7 +72,7 @@ export class PresentationsView extends ItemView {
   }
 
   getDisplayText(): string {
-    return 'Презентации';
+    return 'LogicTEAM.Презентации';
   }
 
   getIcon(): string {
@@ -76,7 +82,8 @@ export class PresentationsView extends ItemView {
   async onOpen(): Promise<void> {
     await this.plugin.presentationTemplates.init();
     this.markStaleGenerating();
-    this.render();
+    this.buildShell();
+    this.renderPage();
   }
 
   /** Помечает «зависшие» генерации (перезагрузка плагина во время LLM-вызова) как ошибки. */
@@ -113,34 +120,85 @@ export class PresentationsView extends ItemView {
     };
   }
 
-  private render(): void {
-    const root = this.contentEl;
-    root.empty();
-    root.addClass('tn-pres-container');
+  // ---- Каркас ----
 
-    const header = root.createDiv({ cls: 'tn-pres-header' });
-    header.createEl('h3', { text: '📽 Презентации' });
+  private buildShell(): void {
+    const container = this.contentEl;
+    container.addClass('tn-pres-container');
+    this.rootEl = container.createDiv({ cls: 'tn-pres-app' });
 
-    const nav = root.createDiv({ cls: 'tn-pres-header tn-mt-8' });
-    const tabs: Array<{ id: Tab; label: string }> = [
-      { id: 'master', label: '🛠 Мастер презентаций' },
-      { id: 'registry', label: '🗂 Реестр презентаций' },
+    const topbar = this.rootEl.createDiv({ cls: 'tn-pres-topbar' });
+    topbar.createDiv({ cls: 'tn-pres-module-title', text: 'LogicTEAM.Презентации' });
+    this.crumbEl = topbar.createDiv({ cls: 'tn-pres-crumb' });
+    topbar.createDiv({ cls: 'tn-pres-spacer' });
+    const createBtn = topbar.createEl('button', { text: '＋ Новая презентация', cls: 'tn-pres-create' });
+    createBtn.addEventListener('click', () => {
+      this.currentTab = 'master';
+      this.newPresentation();
+      this.syncNavActive();
+    });
+
+    const main = this.rootEl.createDiv({ cls: 'tn-pres-main' });
+    const sidebar = main.createDiv({ cls: 'tn-pres-sidebar' });
+
+    const collapseBtn = sidebar.createDiv({ cls: 'tn-pres-collapse' });
+    collapseBtn.createSpan({ text: '▧' });
+    this.collapseLabel = collapseBtn.createSpan({ cls: 'tn-pres-collapse-lbl', text: 'Свернуть' });
+    collapseBtn.addEventListener('click', () => this.toggleCollapse());
+
+    this.navEl = sidebar.createDiv({ cls: 'tn-pres-nav' });
+    this.buildNav();
+
+    const content = main.createDiv({ cls: 'tn-pres-content' });
+    this.bodyEl = content.createDiv();
+  }
+
+  private buildNav(): void {
+    this.navEl.empty();
+    const tabs: Array<{ id: Tab; ico: string; label: string }> = [
+      { id: 'master', ico: '🛠', label: 'Мастер презентаций' },
+      { id: 'registry', ico: '🗂', label: 'Реестр презентаций' },
     ];
     for (const t of tabs) {
-      const btn = nav.createEl('button', {
-        text: t.label,
-        cls: 'tn-pres-btn' + (this.currentTab === t.id ? ' tn-pres-btn-active' : ''),
-      });
-      btn.addEventListener('click', () => {
+      const item = this.navEl.createEl('a', { cls: 'tn-pres-nav-item', attr: { href: '#' } });
+      item.createSpan({ cls: 'tn-pres-nav-ico', text: t.ico });
+      item.createSpan({ cls: 'tn-pres-nav-lbl', text: t.label });
+      item.dataset.key = t.id;
+      item.addEventListener('click', (ev) => {
+        ev.preventDefault();
         this.currentTab = t.id;
-        this.render();
+        this.syncNavActive();
+        this.renderPage();
       });
     }
+    this.syncNavActive();
+  }
 
-    if (this.currentTab === 'master') {
-      this.renderMaster(root);
+  private syncNavActive(): void {
+    this.navEl.querySelectorAll('.tn-pres-nav-item').forEach((el) => {
+      const navEl = el as HTMLElement;
+      navEl.classList.toggle('active', navEl.dataset.key === this.currentTab);
+    });
+  }
+
+  private toggleCollapse(): void {
+    this.collapsed = !this.collapsed;
+    this.rootEl.classList.toggle('collapsed', this.collapsed);
+    if (this.collapseLabel) {
+      this.collapseLabel.setText(this.collapsed ? 'Развернуть' : 'Свернуть');
+    }
+  }
+
+  // ---- Страница ----
+
+  private renderPage(): void {
+    const isMaster = this.currentTab === 'master';
+    this.crumbEl.setText(isMaster ? 'Мастер презентаций' : 'Реестр презентаций');
+    this.bodyEl.empty();
+    if (isMaster) {
+      this.renderMaster(this.bodyEl);
     } else {
-      this.renderRegistry(root);
+      this.renderRegistry(this.bodyEl);
     }
   }
 
@@ -148,8 +206,6 @@ export class PresentationsView extends ItemView {
 
   private renderMaster(root: HTMLElement): void {
     const toolbar = root.createDiv({ cls: 'tn-pres-header tn-mt-8' });
-    toolbar.createEl('button', { text: '🆕 Новая презентация', cls: 'tn-pres-btn' })
-      .addEventListener('click', () => this.newPresentation());
     toolbar.createEl('button', { text: '🎨 Новый шаблон', cls: 'tn-pres-btn' })
       .addEventListener('click', () => new NewTemplateModal(this.plugin, this.selectedModel).open());
 
@@ -189,7 +245,7 @@ export class PresentationsView extends ItemView {
     this.chatActive = false;
     this.chatLog = [];
     this.chatRound = 0;
-    this.render();
+    this.renderPage();
   }
 
   private renderDraft(container: HTMLElement, draft: PresentationDraft): void {
@@ -217,10 +273,10 @@ export class PresentationsView extends ItemView {
       this.target = { mode: 'new' };
       this.activeDraftId = draft.id;
       this.chatActive = false;
-      void this.plugin.presentationsDb.deleteDraft(draft.id).then(() => this.render());
+      void this.plugin.presentationsDb.deleteDraft(draft.id).then(() => this.renderPage());
     });
     btn('🗑 Удалить', () => {
-      void this.plugin.presentationsDb.deleteDraft(draft.id).then(() => this.render());
+      void this.plugin.presentationsDb.deleteDraft(draft.id).then(() => this.renderPage());
     });
   }
 
@@ -238,6 +294,22 @@ export class PresentationsView extends ItemView {
     }
   }
 
+  /** Компактное поле-дропдаун в строке из нескольких полей (`tn-pres-row`). */
+  private addCompactDropdown(row: HTMLElement, label: string, options: string[], value: string, onChange: (v: string) => void): void {
+    const field = row.createDiv({ cls: 'tn-pres-row-field' });
+    field.createDiv({ cls: 'tn-pres-row-label', text: label });
+    const dd = new DropdownComponent(field);
+    for (const o of options) dd.addOption(o, o);
+    dd.setValue(value).onChange(onChange);
+  }
+
+  /** Компактное текстовое поле в строке из нескольких полей (`tn-pres-row`). */
+  private addCompactText(row: HTMLElement, label: string, value: string, placeholder: string, onChange: (v: string) => void): void {
+    const field = row.createDiv({ cls: 'tn-pres-row-field' });
+    field.createDiv({ cls: 'tn-pres-row-label', text: label });
+    new TextComponent(field).setValue(value).setPlaceholder(placeholder).onChange(onChange);
+  }
+
   /** Встроенная анкета (перенос QuestionnaireModal) — рисуется прямо во вкладке. */
   private renderQuestionnaire(container: HTMLElement, q: PresentationQuestionaire, isRegenerate: boolean): void {
     const card = container.createDiv({ cls: 'tn-pres-card' });
@@ -249,23 +321,10 @@ export class PresentationsView extends ItemView {
     new Setting(card).setName('Повод (кикер)').setDesc('Надпись над заголовком титульного слайда, например «Экспертно-технический совет · 13.08.2026» (необязательно)')
       .addText(t => t.setValue(q.kicker || '').setPlaceholder('Повод · дата').onChange(v => { q.kicker = v; }));
 
-    new Setting(card).setName('Аудитория')
-      .addDropdown(d => {
-        for (const o of AUDIENCE_OPTIONS) d.addOption(o, o);
-        d.setValue(q.audience).onChange(v => { q.audience = v; });
-      });
-
-    new Setting(card).setName('Цель')
-      .addDropdown(d => {
-        for (const o of PURPOSE_OPTIONS) d.addOption(o, o);
-        d.setValue(q.purpose).onChange(v => { q.purpose = v; });
-      });
-
-    new Setting(card).setName('Структура')
-      .addDropdown(d => {
-        for (const o of STRUCTURE_OPTIONS) d.addOption(o, o);
-        d.setValue(q.structure).onChange(v => { q.structure = v; });
-      });
+    const classifyRow = card.createDiv({ cls: 'tn-pres-row' });
+    this.addCompactDropdown(classifyRow, 'Аудитория', AUDIENCE_OPTIONS, q.audience, v => { q.audience = v; });
+    this.addCompactDropdown(classifyRow, 'Цель', PURPOSE_OPTIONS, q.purpose, v => { q.purpose = v; });
+    this.addCompactDropdown(classifyRow, 'Структура', STRUCTURE_OPTIONS, q.structure, v => { q.structure = v; });
 
     new Setting(card).setName('Ключевые сообщения').setDesc('Что обязательно донести (необязательно)')
       .addTextArea(ta => {
@@ -277,14 +336,11 @@ export class PresentationsView extends ItemView {
     new Setting(card).setName('Тон').setDesc('Необязательно')
       .addText(t => t.setValue(q.tone).setPlaceholder('Деловой, осторожный...').onChange(v => { q.tone = v; }));
 
-    new Setting(card).setName('Докладчик')
-      .addText(t => t.setValue(q.presenter).setPlaceholder('ФИО — должность').onChange(v => { q.presenter = v; }));
-
-    new Setting(card).setName('Телефон докладчика').setDesc('Для QR-кода на финальном слайде (необязательно)')
-      .addText(t => t.setValue(q.presenterPhone || '').setPlaceholder('+7 900 000-00-00').onChange(v => { q.presenterPhone = v; }));
-
-    new Setting(card).setName('Email докладчика').setDesc('Для QR-кода на финальном слайде (необязательно)')
-      .addText(t => t.setValue(q.presenterEmail || '').setPlaceholder('name@company.ru').onChange(v => { q.presenterEmail = v; }));
+    const presenterRow = card.createDiv({ cls: 'tn-pres-row' });
+    this.addCompactText(presenterRow, 'Докладчик', q.presenter, 'ФИО — должность', v => { q.presenter = v; });
+    this.addCompactText(presenterRow, 'Телефон', q.presenterPhone || '', '+7 900 000-00-00', v => { q.presenterPhone = v; });
+    this.addCompactText(presenterRow, 'E-mail', q.presenterEmail || '', 'name@company.ru', v => { q.presenterEmail = v; });
+    card.createDiv({ cls: 'tn-pres-row-hint', text: 'Телефон и e-mail докладчика — для QR-кода на финальном слайде (необязательно).' });
 
     // ---- Иллюстрации: файлы с описаниями, передаются в LLM как «путь — описание» ----
     const illContainer = card.createDiv({ cls: 'tn-pres-ill-box' });
@@ -389,7 +445,7 @@ export class PresentationsView extends ItemView {
       this.chatActive = true;
       this.chatLog = [];
       this.chatRound = 0;
-      this.render();
+      this.renderPage();
       await this.chatAskNext();
     } else {
       await this.doGenerate(q, this.designRules);
@@ -500,7 +556,7 @@ export class PresentationsView extends ItemView {
   private finishChat(): void {
     this.saveChatProgress();
     this.chatActive = false;
-    this.render();
+    this.renderPage();
     void this.doGenerate(this.questionaire, this.designRules);
   }
 
@@ -548,7 +604,7 @@ export class PresentationsView extends ItemView {
         status: 'generating', error: undefined, title: item.title, templateId: item.templateId, questionaire: q,
       });
     }
-    this.render();
+    this.renderPage();
 
     try {
       const generation = await this.plugin.llm.generateSlides(q, designRules, tpl.name, this.selectedModel);
@@ -570,7 +626,7 @@ export class PresentationsView extends ItemView {
       this.activeDraftId = null;
       new Notice(`Презентации: «${item.title}» ${this.target.mode === 'regenerate' ? 'перегенерирована' : 'создана'} (${generation.slides.length} слайдов)`);
       this.currentTab = 'registry';
-      this.render();
+      this.renderPage();
     } catch (e: unknown) {
       const msg = errorMessage(e);
       item.status = 'error';
@@ -585,7 +641,7 @@ export class PresentationsView extends ItemView {
         }
       }
       new Notice(`Ошибка генерации: ${msg}. Черновик сохранён — можно повторить без повторного ввода.`);
-      this.render();
+      this.renderPage();
     }
   }
 
@@ -593,14 +649,13 @@ export class PresentationsView extends ItemView {
 
   private renderRegistry(root: HTMLElement): void {
     const items = this.plugin.presentationsDb.getAll();
-    const list = root.createDiv();
     if (items.length === 0) {
-      list.createDiv({ text: 'Презентаций пока нет. Создайте их во вкладке «Мастер презентаций».' })
-        .style.cssText = 'color:var(--text-muted);padding:12px;';
+      root.createDiv({ cls: 'tn-pres-meta tn-pres-p24' })
+        .setText('Презентаций пока нет. Создайте их во вкладке «Мастер презентаций».');
       return;
     }
     for (const item of [...items].reverse()) {
-      this.renderItem(list, item);
+      this.renderItem(root, item);
     }
   }
 
@@ -614,35 +669,27 @@ export class PresentationsView extends ItemView {
     this.chatLog = [];
     this.chatRound = 0;
     this.currentTab = 'master';
-    this.render();
+    this.renderPage();
   }
 
   private renderItem(container: HTMLElement, item: PresentationItem): void {
     const tpl = this.plugin.presentationTemplates.getTemplate(item.templateId);
-    const row = container.createDiv();
-    row.style.cssText = 'border:1px solid var(--background-modifier-border);border-radius:6px;padding:8px 10px;margin-bottom:8px;';
+    const card = container.createDiv({ cls: 'tn-pres-reg-card' });
 
-    const titleRow = row.createDiv();
-    titleRow.style.cssText = 'display:flex;align-items:center;justify-content:space-between;gap:8px;';
-    const title = titleRow.createSpan();
-    title.style.cssText = 'font-weight:600;font-size:13px;';
-    title.setText(item.title || item.generation.title || 'Без названия');
-    const meta = row.createDiv();
-    meta.style.cssText = 'font-size:11px;color:var(--text-muted);margin:4px 0;';
+    const head = card.createDiv({ cls: 'tn-pres-reg-card-head' });
+    head.createEl('h4', { text: item.title || item.generation.title || 'Без названия', cls: 'tn-pres-reg-card-title' });
     const created = new Date(item.createdAt).toLocaleDateString('ru-RU');
 
-    const actions = row.createDiv();
-    actions.style.cssText = 'display:flex;gap:6px;flex-wrap:wrap;';
+    const meta = card.createDiv({ cls: 'tn-pres-reg-card-meta' });
+    const actions = card.createDiv({ cls: 'tn-pres-reg-card-actions' });
     const btn = (text: string, fn: () => void) => {
-      const b = actions.createEl('button', { text, cls: 'tn-pres-btn' });
-      b.style.cssText = 'font-size:11px;padding:2px 8px;';
+      const b = actions.createEl('button', { text, cls: 'tn-pres-btn tn-pres-reg-btn' });
       b.addEventListener('click', fn);
       return b;
     };
 
     if (item.status === 'generating') {
-      const statusEl = row.createDiv();
-      statusEl.style.cssText = 'display:flex;align-items:center;font-size:12px;color:var(--text-muted);margin:4px 0;';
+      const statusEl = card.createDiv({ cls: 'tn-pres-reg-card-status' });
       statusEl.createDiv({ cls: 'tn-blink' });
       statusEl.createSpan({ text: 'Генерация… это займёт 1–3 минуты' });
       meta.setText(`Создано: ${created} · Шаблон: ${tpl?.name ?? item.templateId}`);
@@ -651,9 +698,7 @@ export class PresentationsView extends ItemView {
     }
 
     if (item.status === 'error') {
-      const errEl = row.createDiv();
-      errEl.style.cssText = 'font-size:12px;color:var(--text-error);margin:4px 0;';
-      errEl.setText(`❌ ${item.error || 'Ошибка генерации'}`);
+      card.createDiv({ cls: 'tn-pres-reg-card-error', text: `❌ ${item.error || 'Ошибка генерации'}` });
       meta.setText(`Создано: ${created} · Шаблон: ${tpl?.name ?? item.templateId}`);
       btn('🔁 Перегенерировать', () => this.regenerateFromRegistry(item));
       btn('🗑 Удалить', () => this.deleteItem(item));
@@ -672,7 +717,7 @@ export class PresentationsView extends ItemView {
   }
 
   private openEditor(item: PresentationItem): void {
-    new PresentationEditorModal(this.plugin, item, () => this.render()).open();
+    new PresentationEditorModal(this.plugin, item, () => this.renderPage()).open();
   }
 
   private async generateHtml(item: PresentationItem): Promise<string> {
@@ -707,7 +752,7 @@ export class PresentationsView extends ItemView {
         templateVersion: item.templateVersion,
       });
       new Notice('Презентации: настройки показа обновлены');
-      this.render();
+      this.renderPage();
     }).open();
   }
 
@@ -750,7 +795,7 @@ export class PresentationsView extends ItemView {
           images, bgDarken, html: item.html, renderVersion: item.renderVersion, templateVersion: item.templateVersion,
         });
         new Notice('Презентации: изображения обновлены');
-        this.render();
+        this.renderPage();
       },
     ).open();
   }
@@ -773,6 +818,6 @@ export class PresentationsView extends ItemView {
   private async deleteItem(item: PresentationItem): Promise<void> {
     await this.plugin.presentationsDb.delete(item.id);
     new Notice('Презентации: удалено');
-    this.render();
+    this.renderPage();
   }
 }
