@@ -294,6 +294,163 @@
   font-size: var(--font-ui-small);
 }
 
+/* ================= Карточка анкеты («Мастер презентаций») ================= */
+
+.tn-pres-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px 20px;
+  margin-bottom: 12px;
+}
+
+.tn-pres-card h4 {
+  margin: 0 0 4px;
+  font-size: 16px;
+}
+
+.tn-pres-hidden {
+  display: none;
+}
+
+/* ---- Иллюстрации ---- */
+
+.tn-pres-ill-box {
+  margin-top: 14px;
+  padding: 12px 14px;
+  border: 1px dashed var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--bg);
+}
+
+.tn-pres-ill-title {
+  font-weight: 600;
+  font-size: var(--font-ui-small);
+  margin: 0 0 4px;
+}
+
+.tn-pres-ill-desc {
+  color: var(--muted);
+  font-size: var(--font-smaller);
+  margin-bottom: 10px;
+}
+
+.tn-pres-ill-preview {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.tn-pres-ill-card {
+  width: 160px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+}
+
+.tn-pres-ill-img {
+  width: 100%;
+  height: 90px;
+  object-fit: cover;
+  border-radius: 6px;
+  background: var(--bg);
+}
+
+.tn-pres-ill-cap {
+  font-size: var(--font-smaller);
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tn-pres-ill-input {
+  width: 100%;
+  box-sizing: border-box;
+  font-size: var(--font-smaller);
+}
+
+.tn-pres-ill-del {
+  font-size: 11px;
+  padding: 2px 6px;
+  align-self: flex-start;
+}
+
+/* ================= Встроенный чат мозгового штурма ================= */
+
+.tn-pres-chat-panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px 20px;
+  margin-top: 12px;
+}
+
+.tn-pres-chat-panel h4 {
+  margin: 0 0 4px;
+  font-size: 16px;
+}
+
+.tn-pres-chat-sub {
+  color: var(--muted);
+  font-size: var(--font-smaller);
+  margin-bottom: 12px;
+}
+
+.tn-pres-chat-body {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 320px;
+  overflow-y: auto;
+  margin-bottom: 10px;
+  padding-right: 4px;
+}
+
+.tn-pres-msg {
+  display: flex;
+}
+
+.tn-pres-msg-user {
+  justify-content: flex-end;
+}
+
+.tn-pres-bubble {
+  max-width: 80%;
+  padding: 8px 12px;
+  border-radius: var(--radius-sm);
+  font-size: var(--font-ui-small);
+  white-space: pre-wrap;
+}
+
+.tn-pres-bubble-assistant {
+  background: var(--bg);
+  color: #171725;
+}
+
+.tn-pres-bubble-user {
+  background: var(--accent);
+  color: #fff;
+}
+
+.tn-pres-chat-input {
+  width: 100%;
+  box-sizing: border-box;
+  resize: vertical;
+  margin-bottom: 8px;
+}
+
+.tn-pres-chat-row {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
 .tn-blink {
   display: inline-block;
   width: 10px;
