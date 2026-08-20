@@ -48,6 +48,10 @@
 
 ## История работ
 
+### 2026-08-20 — v0.3.7 (пересборка за sbe-core: SbeContactsApi)
+- `sbe-core`: добавлены `SbeContactsApi` и `'sbe-contacts'` в `SbeServiceMap` — пересборка `main.js`, исходники плагина не менялись. Версия 0.3.6 → **0.3.7** (manifest + package.json).
+- `npx tsc --noEmit` EXIT=0; `npm run build` OK.
+
 ### 2026-08-19 — v0.3.6 (стили анкеты, иллюстраций и встроенного чата)
 - Побочно обнаруженное в v0.3.5 (не было исправлено там) теперь закрыто: классы
   `tn-pres-card`, `tn-pres-ill-box`/`-title`/`-desc`/`-preview`/`-card`/`-img`/`-cap`/
